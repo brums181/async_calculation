@@ -97,14 +97,12 @@ class Server:
 
         if result_eval is not None:
             res = float(result_eval)
-            print("RESEVAL", res)
             info_str = (
                 f"Выражение {client_message} вычислено. Результат = {res}"
             )
 
         self.logger.info(info_str)
         json_mess_en = self.to_json(client_message, res)
-        print(json_mess_en)
         client.writer.write(json_mess_en)
         await client.writer.drain()
     
@@ -118,6 +116,7 @@ class Server:
         client.writer.close()
         self.logger.info("Соединение с клиентом прервано")
 
+    # TODO: доделать отключение
     def shutdown_server(self):
         """Отключение сервера"""
         info_str = "Сервер отключен"
