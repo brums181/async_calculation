@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import logging
+import json
 from aioconsole import ainput
 from logger import initialize_logger
 
@@ -46,15 +47,17 @@ class Client:
             self.logger.error("Ошибка при подключении к серверу")
 
     async def receive_messages(self):
-        server_message: str = None
-        while server_message != 'exit':
-            server_message = await self.get_server_message()
-            self.logger.info(f"Принято сообщение от сервера: {server_message}")
-            print(f"{server_message}")
+        server_message: dict = {'result': None}
+        server_message = await self.get_server_message()
+        result_str = f"Принято сообщение от сервера. "\
+                    f"Выражение {server_message['expression']} = "\
+                    f"{server_message['result']}"
+        print(result_str)
+        self.logger.info(result_str)
 
 
     async def get_server_message(self):
-        return str((await self.reader.read(255)).decode('utf8'))
+        return json.loads((await self.reader.read(255)).decode('utf8'))   
 
     async def client_input(self):
         client_message: str = None
