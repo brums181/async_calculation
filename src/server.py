@@ -3,8 +3,9 @@ import asyncio
 import sys
 import numexpr as ne
 import json
-
+import logging
 from client_model import ClientModel
+from logger import initialize_logger
 
 
 class Server:
@@ -21,6 +22,8 @@ class Server:
         self.__port = port
         self.__loop = loop
         self.__clients: dict[asyncio.Task, ClientModel] = {}
+        self.__logger: logging.Logger = initialize_logger('server')
+        self.logger.info(f"Инициализирован сервер {self.ip}:{self.port}")
 
     @property
     def ip(self):
@@ -29,6 +32,10 @@ class Server:
     @property
     def port(self):
         return self.__port
+    
+    @property
+    def logger(self):
+        return self.__logger
 
     @property
     def loop(self):
@@ -47,7 +54,7 @@ class Server:
             self.loop.run_until_complete(server)
             self.loop.run_forever()
         except Exception as e:
-            print("Ошибка при запуске сервера")
+            self.logger.error("Ошибка при запуске сервера")
         
         self.shutdown_server()
 
@@ -62,12 +69,12 @@ class Server:
         client = ClientModel(client_reader, client_writer)
         task = asyncio.create_task(self.receiving_and_calc(client))
         self.clients[task] = client
-        print(self.clients)
         client_ip = client_writer.get_extra_info('peername')[0]
         client_port = client_writer.get_extra_info('peername')[1]
-        print(f"Подключен новый клиент: {client_ip}:{client_port}")
+        info_str = f"Подключен новый клиент: {client_ip}:{client_port}"
+        print(info_str)
         # Заверение выполнения задачи
-        print("CALLBACK ")
+        self.logger.info(info_str)
         task.add_done_callback(self.disconnect_client)
     
     async def receiving_and_calc(self, client: ClientModel):
@@ -77,25 +84,26 @@ class Server:
         :type client: Client
         """
         client_message = await client.get_message()
+        self.logger.info(f"Получено сообщение от клиента {client_message}")
         result_eval = None
         res = None
-        # if client_message == "exit":
-        #     break
         try:
             result_eval = ne.evaluate(client_message)
-        except (KeyError, TypeError):
-            res = "Вычисление невозможно."\
-                "Не является простым математическим выражением."
+        except (KeyError, TypeError, SyntaxError):
+            self.logger.info(
+                f"{client_message} не вычислено. "
+                f"Не является простым математическим выражением"
+            )
         
         if result_eval:
-            res = str(float(result_eval))
-
+            res = float(result_eval)
+            
+        self.logger.info(
+            f"Выражение {client_message} вычислено. Результат = {res}"
+        )
         json_mess_en = json.dumps({'expression': client_message, 'result': res}).encode()
         client.writer.write(json_mess_en)
         await client.writer.drain()
-
-        print("Соединение с клиентом прервано")
-
     
     def disconnect_client(self, task: asyncio.Task):
         """Отсоединение клиента
@@ -106,10 +114,14 @@ class Server:
         del self.clients[task]
         client.writer.write('exit'.encode('utf8'))
         client.writer.close()
+        self.logger.info("Соединение с клиентом прервано")
 
     def shutdown_server(self):
         """Отключение сервера"""
-        print("Отключение сервера")
+        info_str = "Сервер отключен"
+        print(info_str)
+        self.logger.info(info_str)
+
         # for client in self.clients.values():
         #     client.writer.write('exit'.encode('utf8'))
         self.loop.stop()
