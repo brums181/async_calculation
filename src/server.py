@@ -67,6 +67,7 @@ class Server:
         client_port = client_writer.get_extra_info('peername')[1]
         print(f"Подключен новый клиент: {client_ip}:{client_port}")
         # Заверение выполнения задачи
+        print("CALLBACK ")
         task.add_done_callback(self.disconnect_client)
     
     async def receiving_and_calc(self, client: ClientModel):
@@ -75,24 +76,23 @@ class Server:
         :param client: клиент, посылающий сообщение
         :type client: Client
         """
-        while True:
-            client_message = await client.get_message()
-            result_eval = None
-            res = None
-            if client_message == "exit":
-                break
-            try:
-                result_eval = ne.evaluate(client_message)
-            except (KeyError, TypeError):
-                res = "Вычисление невозможно."\
-                    "Не является простым математическим выражением."
-            
-            if result_eval:
-                res = str(float(result_eval))
+        client_message = await client.get_message()
+        result_eval = None
+        res = None
+        # if client_message == "exit":
+        #     break
+        try:
+            result_eval = ne.evaluate(client_message)
+        except (KeyError, TypeError):
+            res = "Вычисление невозможно."\
+                "Не является простым математическим выражением."
+        
+        if result_eval:
+            res = str(float(result_eval))
 
-            json_mess_en = json.dumps({'expression': client_message, 'result': res}).encode()
-            client.writer.write(json_mess_en)
-            await client.writer.drain()
+        json_mess_en = json.dumps({'expression': client_message, 'result': res}).encode()
+        client.writer.write(json_mess_en)
+        await client.writer.drain()
 
         print("Соединение с клиентом прервано")
 
@@ -106,7 +106,6 @@ class Server:
         del self.clients[task]
         client.writer.write('exit'.encode('utf8'))
         client.writer.close()
-        print("Соединение с клиентом закрыто")
 
     def shutdown_server(self):
         """Отключение сервера"""
