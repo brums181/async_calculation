@@ -88,21 +88,23 @@ class Server:
         self.logger.info(f"Получено сообщение от клиента {client_message}")
         result_eval = None
         res = None
+        info_str = None
         try:
             result_eval = ne.evaluate(client_message)
         except (KeyError, TypeError, SyntaxError):
-            self.logger.info(
-                f"{client_message} не вычислено. "
-                f"Не является простым математическим выражением"
-            )
-        
-        if result_eval:
+            info_str = f"{client_message} не вычислено. "\
+                    f"Не является простым математическим выражением"
+
+        if result_eval is not None:
             res = float(result_eval)
-            
-        self.logger.info(
-            f"Выражение {client_message} вычислено. Результат = {res}"
-        )
+            print("RESEVAL", res)
+            info_str = (
+                f"Выражение {client_message} вычислено. Результат = {res}"
+            )
+
+        self.logger.info(info_str)
         json_mess_en = self.to_json(client_message, res)
+        print(json_mess_en)
         client.writer.write(json_mess_en)
         await client.writer.drain()
     
@@ -113,7 +115,6 @@ class Server:
         """
         client = self.clients[task]
         del self.clients[task]
-        client.writer.write('exit'.encode('utf8'))
         client.writer.close()
         self.logger.info("Соединение с клиентом прервано")
 
@@ -122,9 +123,6 @@ class Server:
         info_str = "Сервер отключен"
         print(info_str)
         self.logger.info(info_str)
-
-        # for client in self.clients.values():
-        #     client.writer.write('exit'.encode('utf8'))
         self.loop.stop()
 
     def to_json(self, message: str, res: Union[float, None]):
@@ -134,7 +132,9 @@ class Server:
         :param res: результат, вычисленный сервером
         :type res: float | str
         """
-        return json.dumps({'expression': message, 'result': res}).encode()
+        return json.dumps(
+            {'expression': message, 'result': res}
+        ).encode()
 
 
 if __name__ == '__main__':
