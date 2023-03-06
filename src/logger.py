@@ -1,11 +1,12 @@
+"""Модуль с инициализацией логгера"""
 import pathlib
 import os
 import logging
 from datetime import datetime
 
 def initialize_logger(name):
-    """Инициализация логера для логирования в файл
-    :return logger: Логер, испоользуемый для записи
+    """Инициализация логгера для логирования в файл
+    :return logger: логгер, испоользуемый для записи
     :type logger: logging.Logger
     """
     # создание директории в проекте
