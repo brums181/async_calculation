@@ -4,6 +4,7 @@ import sys
 import numexpr as ne
 import json
 import logging
+from typing import Union
 from client_model import ClientModel
 from logger import initialize_logger
 
@@ -101,7 +102,7 @@ class Server:
         self.logger.info(
             f"Выражение {client_message} вычислено. Результат = {res}"
         )
-        json_mess_en = json.dumps({'expression': client_message, 'result': res}).encode()
+        json_mess_en = self.to_json(client_message, res)
         client.writer.write(json_mess_en)
         await client.writer.drain()
     
@@ -125,6 +126,15 @@ class Server:
         # for client in self.clients.values():
         #     client.writer.write('exit'.encode('utf8'))
         self.loop.stop()
+
+    def to_json(self, message: str, res: Union[float, None]):
+        """Функция для превращения данных для отправки в json и их кодирование
+        :param message: сообщение, пришедее от клиента
+        :type message: str
+        :param res: результат, вычисленный сервером
+        :type res: float | str
+        """
+        return json.dumps({'expression': message, 'result': res}).encode()
 
 
 if __name__ == '__main__':
