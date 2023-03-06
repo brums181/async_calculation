@@ -14,4 +14,4 @@
 `python src\client.py 127.0.0.1 10000`
 
 
-<img src="(https://user-images.githubusercontent.com/56662300/223114137-d3d04da2-1b29-4812-bd39-2f92ee183553.png" width="600" />
+<img src="https://user-images.githubusercontent.com/56662300/223114137-d3d04da2-1b29-4812-bd39-2f92ee183553.png" width="600" />
